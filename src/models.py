@@ -1,11 +1,9 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String, Boolean
+from sqlalchemy import String, Boolean, ForeignKey
 from enum import Enum
 from sqlalchemy import Enum as SQLAlchemyEnum
 from sqlalchemy.orm import Mapped, mapped_column
 from typing import List
-from sqlalchemy import ForeignKey
-from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
 
 db = SQLAlchemy()
@@ -27,8 +25,10 @@ class User(db.Model):
 
      # relationship
     posts: Mapped[List["Post"]] = relationship(back_populates="user")
-    followers_from: Mapped[List["Follower"]] = relationship(back_populates="user_from")
-    followers_to: Mapped[List["Follower"]] = relationship(back_populates="user_to")
+    followers_from: Mapped[List["Follower"]] = relationship("Follower", foreign_keys="Follower.user_from_id",
+                                                            back_populates="user_from")
+    followers_to: Mapped[List["Follower"]] = relationship("Follower", foreign_keys="Follower.user_to_id",
+                                                          back_populates="user_to")
     comments: Mapped[List["Comment"]] = relationship(back_populates="author")
 
     def serialize(self):
@@ -55,11 +55,12 @@ class Follower(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_from_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
     user_to_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
-    user: Mapped["User"] = relationship(back_populates="followers")
 
     # relationship
-    user_from: Mapped["User"] = relationship(back_populates="followers_from")
-    user_to: Mapped["User"] = relationship(back_populates="followers_to")
+    user_from: Mapped["User"] = relationship("User", foreign_keys=[user_from_id],
+                                              back_populates="followers_from")
+    user_to: Mapped["User"] = relationship("User", foreign_keys=[user_from_id],
+                                           back_populates="followers_to")
 
 class Media(db.Model):
     __tablename__ = "media"
